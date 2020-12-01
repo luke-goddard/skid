@@ -2,6 +2,44 @@
 
 Skid expands on the work behind [Difuze](https://acmccs.github.io/papers/p2123-corinaA.pdf). Difuze is an interface aware fuzzer for the [ioctl](https://man7.org/linux/man-pages/man2/ioctl.2.html) syscalls. Vendors adding new custom code to the kernel will always pose a risk, but pair that risk with a direct interface to the kernel's new code from userland and you're left with a profitable target for bug hunting. On android 63% of kernel related bugs are using ioctl on vendor's custom drivers, see [here](https://events.static.linuxfound.org/sites/events/files/slides/Android-%20protecting%20the%20kernel.pdf).
 
+```
+                  ████████████████████████████████████
+                ██▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▒▒████
+              ██▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒██████      
+            ██▒▒▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓██████      
+            ██▒▒▓▓████████████████████████████▒▒▓▓██████
+            ██▒▒▓▓████████████████████████████▒▒▓▓██████
+            ██▒▒▓▓████████████████████████████▒▒▓▓██████
+            ██▒▒▓▓xxxxxxxxxxxxxxxxxxxxxxxxxxxx▒▒▓▓██████
+            ██▒▒▓▓ ███████╗██╗  ██╗██╗██████╗ ▒▒▓▓██████
+            ██▒▒▓▓ ██╔════╝██║ ██╔╝██║██╔══██╗▒▒▓▓██████
+            ██▒▒▓▓ ███████╗█████╔╝ ██║██║  ██║▒▒▓▓██████
+            ██▒▒▓▓ ╚════██║██╔═██╗ ██║██║  ██║▒▒▓▓██████
+            ██▒▒▓▓ ███████║██║  ██╗██║██████╔╝▒▒▓▓██████
+            ██▒▒▓▓ ╚══════╝╚═╝  ╚═╝╚═╝╚═════╝ ▒▒▓▓██████
+            ██▒▒▓▓ xxxxxxxxxxxxxxxxxxxxxxxxxxx▒▒▓▓██████
+            ██▒▒▓▓████████████████████████████▒▒▓▓██████
+            ██▒▒▓▓████████████████████████████▒▒▓▓██████
+            ██▒▒▓▓████████████████████████████▒▒▓▓██████      
+            ██▒▒▓▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▓▓██████
+            ██▒▒▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓██████████  
+            ██████████████████████████████████████████████▓▓██
+            ████████████████████████████████████████████▓▓████
+        ██████████████████████████████████████████████▓▓██████
+      ██▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒████████
+      ██▒▒▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓████████
+      ██▒▒▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓████████████████▓▓▓▓████████
+      ██▒▒▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓████████████████▓▓▓▓████████
+      ██▒▒▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓██▓▓▓▓▓▓▓▓████████
+      ██▒▒▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓████████
+      ████████▒▒████▒▒████▒▒████▒▒████▒▒████▒▒████▒▒▒▒██████  
+    ██▒▒████▒▒████▒▒████▒▒████▒▒████▒▒████▒▒████▒▒████████    
+  ██▒▒██████████████████████████████████████████████████      
+██▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▓▓████        
+██▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓████          
+  ████████████████████████████████████████████████
+```
+
 ## SKID's improvements
 
 * No compilation required to model code
@@ -9,6 +47,8 @@ Skid expands on the work behind [Difuze](https://acmccs.github.io/papers/p2123-c
 * Less dependencies
 * More generic, not just android but all Linux Kernel's
 * Defines structure using [protobuf](https://github.com/protocolbuffers/protobuf) allowing the use of google's new [protobuf-mutator](https://github.com/google/libprotobuf-mutator)
+* Moduler
+* Has ASCII art
 
 ## Problems with coverage guided fuzzing
 
