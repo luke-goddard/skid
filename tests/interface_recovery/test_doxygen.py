@@ -217,6 +217,7 @@ def test_filter_bad_schema_non_existant_file(schema):
 
 
 def test_find_fileop_structs():
+    print(doxygen.find_fileop_structs(TEST_XML_FILES))
     assert len(doxygen.find_fileop_structs(TEST_XML_FILES)) == 2
 
 

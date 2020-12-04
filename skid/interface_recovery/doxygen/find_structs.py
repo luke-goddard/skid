@@ -43,6 +43,9 @@ logger = getLogger(__name__)
 POSSIBLE_IOCTL_NAMES = {".unlocked_ioctl", ".compat_ioctl"}
 
 
+########## LIST OF XML ##########
+
+
 def find_fileop_structs(xml_files: Tuple[str, ...]) -> Tuple[Dict[str, str], ...]:
     """
     Itterates through all xml files and returns all file_operations
@@ -52,14 +55,11 @@ def find_fileop_structs(xml_files: Tuple[str, ...]) -> Tuple[Dict[str, str], ...
     assert isinstance(xml_files[0], str)
 
     struct_elements = []
+    bar_tit = utils.format_alive_bar_title("Finding file_operations structs")
 
     # Multiprocessed loading bar
     with Pool(processes=os.cpu_count()) as pool:
-
-        bar_tit = utils.format_alive_bar_title("Finding file_operations structs")
         with alive_bar(len(xml_files), title=bar_tit) as bar:
-
-            # Run tasks
 
             for structs in pool.imap_unordered(
                 find_fileop_structs_in_file, xml_files
@@ -71,53 +71,31 @@ def find_fileop_structs(xml_files: Tuple[str, ...]) -> Tuple[Dict[str, str], ...
             f"Found {len(struct_elements)} ioctl file_operations handler function pointers"
         )
 
-    # Log results
-    if len(struct_elements) == 0:
-        logger.critical(
-            "No ioctl file_operations structs could be found in the source code"
-        )
-    else:
-        logger.debug(json.dumps(struct_elements, indent=4))
-
+    log_results(struct_elements)
     return tuple(struct_elements)  # type: ignore
+
+
+########## SINGLE XML FILE ##########
 
 
 def find_fileop_structs_in_file(xml_file: str) -> List[Dict[str, str]]:
     """ Loop's through all member definitions in the XML looking for relevant structs """
-    structs = []  # type: List[Dict[str, str]]
-    logger.debug(f"Finding structs in {xml_file}")
-
-    # Failed to parse XML
     try:
+        logger.debug(f"Finding structs in {xml_file}")
         root = xml_parser.get_root(xml_file)
     except etree.LxmlError as e:
         logger.error(e)
-        return structs
+        return list()
 
-    # Find all member definitions
-    for element in root.iter("memberdef"):
+    return [
+        subelement
+        for element in root.iter("memberdef")
+        if is_memberdef_a_file_ops_struct(element)
+        for subelement in parse_ioctl_file_operations(element)
+    ]
 
-        # Check if it's a file_operations struct
-        if not is_memberdef_a_file_ops_struct(element):
-            continue
 
-        # Get the string representation of the struct
-        struct = parse_member_definitions(element)
-
-        for line in struct.splitlines():
-
-            # check to see if struct contains ioctl
-            struct_words = set(line.split())
-            if len(struct_words - POSSIBLE_IOCTL_NAMES) == len(struct_words):
-                continue
-
-            line_number = get_memberdef_location(element)
-            logger.debug(f"Found fops struct: {line_number}")
-
-            struct_name = element.find("name").text
-            structs.append(convert_line_to_dict(line, struct_name, line_number))
-
-    return structs
+########## SINGLE XML ELEMENT ##########
 
 
 def is_memberdef_a_file_ops_struct(element: etree.Element) -> bool:  # type: ignore
@@ -132,10 +110,46 @@ def is_memberdef_a_file_ops_struct(element: etree.Element) -> bool:  # type: ign
     required_tags = {"initializer", "type"}
     actual_tags = {child.tag for child in element.iterchildren()}  # type: ignore
 
-    if len(required_tags - actual_tags) > 0:
-        return False
+    return not len(required_tags - actual_tags) > 0
 
-    return True
+
+########## STRUCTS ##########
+
+
+def parse_ioctl_file_operations(struct_xml: etree.Element):  # type: ignore
+    """
+    For each line in the struct, test to see if it's an ioctl
+    operation and if it is then return the parsed version
+    of that struct as a dictionary. This happends for each line
+    that is found to be an ioctl file_operation function
+
+    Param struct_xml:
+        This is the current XML element that represents an unknown
+        struct
+
+    Return:
+        List of dictionaries parsed by the convert_line_to_dict
+        function
+    """
+    ioctl_ops = list()
+    for line in parse_member_definitions(struct_xml).splitlines():
+
+        # check to see if struct contains ioctl
+        struct_words = set(line.split())
+        if len(struct_words - POSSIBLE_IOCTL_NAMES) == len(struct_words):
+            continue
+
+        # log findings
+        line_number = get_memberdef_location(struct_xml)
+        logger.debug(f"Found fops struct: {line_number}")
+
+        struct_name = struct_xml.find("name").text  # type: ignore
+        ioctl_ops.append(convert_line_to_dict(line, struct_name, line_number))
+
+    return ioctl_ops
+
+
+########## PARSING STRUCT ##########
 
 
 def parse_member_definitions(element: etree.Element, strip_xml=False) -> str:  # type: ignore
@@ -148,12 +162,13 @@ def parse_member_definitions(element: etree.Element, strip_xml=False) -> str:  #
            .unlocked_ioctl = <ref refid="dfl-fme-main_8c_1a1657ada1fdafea4ec33299b88dcdb622" kindref="member">fme_ioctl</ref>,
        }</initializer>
     """
-    # Should only be one initializer
+    text = ""
     for init in element.iter("initializer"):  # type: ignore
-        logger.debug(etree.tostring(element).decode("utf-8"))  # type: ignore
         if strip_xml:
-            return "".join(init.itertext()).strip()
-        return stringify_children(init)
+            text += "".join(init.itertext()).strip()
+        text += stringify_children(init)
+
+    return text
 
 
 def stringify_children(node: etree.Element) -> str:  # type: ignore
@@ -207,6 +222,9 @@ def parse_function_name(line: str) -> str:
         return ""
 
 
+########## FORMAT AGRIGATED FILE OP INFO ##########
+
+
 def convert_line_to_dict(
     line: str, struct_name: str, line_number: str
 ) -> Dict[str, str]:
@@ -229,3 +247,12 @@ def convert_line_to_dict(
         "struct_name": struct_name,
         "line_number": line_number,
     }
+
+
+def log_results(struct_elements: List[Dict]):
+    """ Log the results found """
+    # Log results
+    if len(struct_elements) == 0:
+        logger.critical("No file_operations structs could be found in the source code")
+        return
+    logger.debug(json.dumps(struct_elements, indent=4))
