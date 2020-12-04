@@ -165,7 +165,7 @@ def stringify_children(node: etree.Element) -> str:  # type: ignore
     if text is None:
         text = ""
     for child in node:  # type: ignore
-        text += etree.tostring(child, encoding="utf-8")
+        text += etree.tostring(child, encoding="unicode")
     return text
 
 

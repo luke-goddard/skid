@@ -14,7 +14,7 @@ from lxml import etree # type: ignore
 
 logger = getLogger(__name__)
 
-class DoxygenMalformedXML(Exception):
+class DoxygenMalformedXML(etree.LxmlError):
     """ Doxygen does not always generate XML files matching it's schema """
 
 def get_root(xml_loc: str):

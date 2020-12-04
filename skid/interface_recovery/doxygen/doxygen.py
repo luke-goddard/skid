@@ -37,7 +37,7 @@ class DoxygenException(Exception):
     """ Base exception for all doxygen related errors """
 
 
-def configure(fuzz_source_location: str, user_config_location: str) -> bool:
+def configure(fuzz_source_location: str, user_config_location: str, conf_loc=DOXYCONF_LOCATION) -> bool:
     """
     Takes the user defined configuration for doxygen (if avaliable) and then
     merges it with the default configuration
@@ -50,7 +50,7 @@ def configure(fuzz_source_location: str, user_config_location: str) -> bool:
 
     try:
         config_dict = doxyconf.get_config(fuzz_source_location, user_config_location)
-        return doxyconf.write_configuration(config_dict, DOXYCONF_LOCATION)
+        return doxyconf.write_configuration(config_dict, conf_loc)
     except (FileNotFoundError, ValueError, OSError) as e:
         logger.critical("Failed to configure doxygen")
         logger.exception(e)
@@ -137,19 +137,19 @@ def ask_for_overwrite() -> str:
 
 
 
-def get_schema() -> etree.XMLSchema:
+def get_schema(schema=SCHEMA_LOCATION) -> etree.XMLSchema:
     """ Loads and returns the schema produced by doxygen """
-    assert os.path.exists(SCHEMA_LOCATION)
-    return xml_parser.get_schema(SCHEMA_LOCATION)
+    assert os.path.exists(schema)
+    return xml_parser.get_schema(schema)
 
 
-def get_all_xml_files() -> Tuple[str, ...]:
+def get_all_xml_files(xml_dir=XML_LOCATION) -> Tuple[str, ...]:
     """ Returns a tuple of all XML files produced by doxygen """
-    assert os.path.exists(XML_LOCATION)
+    assert os.path.exists(xml_dir)
     return tuple(
         [
-            os.path.join(XML_LOCATION, f)
-            for f in os.listdir(XML_LOCATION)
+            os.path.join(xml_dir, f)
+            for f in os.listdir(xml_dir)
             if f.endswith(".xml") and f != "index.xml"
         ]
     )
@@ -162,10 +162,12 @@ def filter_xml_files_bad_schema(
     Doxygen sometimes produces malformed XML files that don't match their schema
     we can drop these xml_files by checking the schema matches
     """
+    assert isinstance(schema, etree.XMLSchema)
     valid_files = []
     bin_tit = utils.format_alive_bar_title("Validating file schemas")
     with alive_bar(len(xml_files_locs), title=bin_tit) as bar:
         for loc in xml_files_locs:
+            assert os.path.exists(loc)
             try:
                 if xml_parser.validate_schema(loc, schema):
                     valid_files.append(loc)
