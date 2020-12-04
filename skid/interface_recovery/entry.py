@@ -68,8 +68,8 @@ def start_interface_recovery(args: Dict[str, Any]) -> bool:
         schema = doxygen.get_schema()
         xml_files = doxygen.filter_xml_files_bad_schema(xml_files, schema)
 
-    device_names = doxygen.find_all_device_names(xml_files)
-    fileop_structs = doxygen.find_fileop_structs(xml_files)
+    doxygen.find_all_device_names(xml_files)
+    doxygen.find_fileop_structs(xml_files)
 
     # device_register_functions = doxygen.find_device_register_functions(
     # ioctl_handers = doxygen.find_ioctl_handers(fileop_structs)

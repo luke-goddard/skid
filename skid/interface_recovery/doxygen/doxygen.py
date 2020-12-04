@@ -114,7 +114,7 @@ def overwrite_prior_doxygen() -> bool:
     logger.critical(f"Previous doxygen results found: {doxyconf.OUTPUT_DIRECTORY}")
 
     while True:
-        answer =ask_for_overwrite()
+        answer = ask_for_overwrite()
         if answer in ["", None] or answer[0].lower() == "n":
             return False
         if answer[0].lower() == "y":
@@ -184,6 +184,7 @@ def find_fileop_structs(xml_files: Tuple[str, ...]):
     Wrapper function to find the file_operations structs
     for ioctl
     """
+    assert isinstance(xml_files, tuple)
     return find_structs.find_fileop_structs(xml_files)
 
 

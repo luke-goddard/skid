@@ -7,8 +7,8 @@
 import logging
 import os
 import shutil
+from tempfile import TemporaryDirectory
 from unittest.mock import patch
-from tempfile import TemporaryDirectory, NamedTemporaryFile
 
 import pytest
 from lxml import etree
@@ -16,7 +16,7 @@ from skid.interface_recovery.doxygen import config, doxygen
 
 TEST_RESOURCES = "tests/resources/"
 VALID_SCHEMA_LOCATION = os.path.join(TEST_RESOURCES, "example_schema.xsd")
-TEST_XML_FILES = ('tests/resources/example_c_file.xml',)
+TEST_XML_FILES = ("tests/resources/example_c_file.xml",)
 
 
 @pytest.fixture
@@ -29,19 +29,11 @@ def change_output_dir():
     finally:
         config.OUTPUT_DIRECTORY = before
 
+
 @pytest.fixture
 def schema():
     return doxygen.get_schema()
 
-@pytest.fixture
-def temp_dir():
-    with TemporaryDirectory() as tempd:
-        yield tempd
-
-@pytest.fixture
-def temp_file():
-    with NamedTemporaryFile() as tempf:
-        yield tempf.name
 
 ################## TEST GLOBALS ##################
 
@@ -188,9 +180,11 @@ def test_get_invalid_schema():
 
 ################## TEST GET XML FILES ##################
 
+
 def test_get_all_xml_files_invalid_location():
     with pytest.raises(AssertionError):
         doxygen.get_all_xml_files(xml_dir="/asdf/as/fda/sdf")
+
 
 def test_get_all_xml_files_valid_location():
     files = doxygen.get_all_xml_files(xml_dir=TEST_RESOURCES)
@@ -203,13 +197,16 @@ def test_get_all_xml_files_valid_location():
 def test_filter_bad_schema_no_files(schema):
     doxygen.filter_xml_files_bad_schema([], schema)
 
+
 def test_filter_bad_schema_no_schema_is_none():
     with pytest.raises(AssertionError):
         doxygen.filter_xml_files_bad_schema([], None)
 
+
 def test_filter_bad_schema_valid(schema):
     good = doxygen.filter_xml_files_bad_schema(TEST_XML_FILES, schema)
     assert set(good) == set(TEST_XML_FILES)
+
 
 def test_filter_bad_schema_non_existant_file(schema):
     with pytest.raises(AssertionError):
@@ -218,5 +215,16 @@ def test_filter_bad_schema_non_existant_file(schema):
 
 ################## TEST FIND FILE OP STRUCTS ##################
 
+
+def test_find_fileop_structs():
+    assert len(doxygen.find_fileop_structs(TEST_XML_FILES)) == 2
+
+
+def test_find_fileop_structs_bad():
+    with pytest.raises(AssertionError):
+        doxygen.find_fileop_structs(0)
+
+
 ################## TEST FIND DEVICE NAMES ##################
 
+# TODO
