@@ -1,0 +1,11 @@
+.tox
+venv/*
+skid.xmind
+.undodir/*
+.undodir
+.coverage
+*/Session.vim
+Session.vim
+stuff/*
+skidfuzz.egg-info/*
+*.pyc

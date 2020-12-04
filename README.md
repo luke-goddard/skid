@@ -17,7 +17,7 @@ Skid expands on the work behind [Difuze](https://acmccs.github.io/papers/p2123-c
             ██▒▒▓▓ ╚════██║██╔═██╗ ██║██║  ██║▒▒▓▓██████
             ██▒▒▓▓ ███████║██║  ██╗██║██████╔╝▒▒▓▓██████
             ██▒▒▓▓ ╚══════╝╚═╝  ╚═╝╚═╝╚═════╝ ▒▒▓▓██████
-            ██▒▒▓▓ xxxxxxxxxxxxxxxxxxxxxxxxxxx▒▒▓▓██████
+            ██▒▒▓▓xxxxxxxxxxxxxxxxxxxxxxxxxxxx▒▒▓▓██████
             ██▒▒▓▓████████████████████████████▒▒▓▓██████
             ██▒▒▓▓████████████████████████████▒▒▓▓██████
             ██▒▒▓▓████████████████████████████▒▒▓▓██████      
@@ -42,7 +42,7 @@ Skid expands on the work behind [Difuze](https://acmccs.github.io/papers/p2123-c
 
 ## SKID's improvements
 
-* No compilation required to model code
+* No compilation required
 * Less setup time
 * Less dependencies
 * More generic, not just android but all Linux Kernel's
