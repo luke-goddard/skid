@@ -38,14 +38,14 @@ Author: Luke Goddard
 Date: 2020
 """
 
-from typing import Dict
+from typing import Dict, Any
 from logging import getLogger
 
 from skid.interface_recovery.doxygen import doxygen
 
 logger = getLogger(__name__)
 
-def start_interface_recovery(args: Dict) -> False:
+def start_interface_recovery(args: Dict[str, Any]) -> bool:
     """ Starts the interface_recovery mode """
 
     print("")
@@ -75,4 +75,5 @@ def start_interface_recovery(args: Dict) -> False:
     # ioctl_handers = doxygen.find_ioctl_handers(fileop_structs)
 
     return True
+
 

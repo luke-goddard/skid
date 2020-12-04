@@ -16,16 +16,13 @@ import subprocess
 import time
 
 from pathlib import Path
-from typing import Tuple
+from typing import Tuple, Dict, Any
 
+from alive_progress import alive_bar # type: ignore
 from lxml import etree
-from alive_progress import alive_bar
-
-from skid.utils import utils
 from skid.interface_recovery.doxygen import config as doxyconf
-from skid.interface_recovery.doxygen import xml_parser
-from skid.interface_recovery.doxygen import find_structs
-from skid.interface_recovery.doxygen import find_device_name
+from skid.interface_recovery.doxygen import find_device_name, find_structs, xml_parser
+from skid.utils import utils
 
 XML_LOCATION = os.path.join(doxyconf.OUTPUT_DIRECTORY, "xml")
 SCHEMA_LOCATION = os.path.join(XML_LOCATION, "compound.xsd")
@@ -46,7 +43,7 @@ def configure(fuzz_source_location: str, user_config_location: str) -> bool:
     merges it with the default configuration
     """
     if not os.path.exists(fuzz_source_location):
-        logger.fatal(
+        logger.critical(
             f"Source directory does not exist at location: {fuzz_source_location}"
         )
         return False
@@ -73,7 +70,7 @@ def run() -> bool:
 
     logger.debug("Indexing source code with doxygen, this might take a while")
 
-    kwargs = dict()
+    kwargs = dict() #type: Dict[str, Any]
     if not utils.is_verbose():
         kwargs = {**kwargs, "stdout": subprocess.DEVNULL}
 
@@ -81,19 +78,21 @@ def run() -> bool:
     try:
         proc = subprocess.Popen(["doxygen", DOXYCONF_LOCATION], **kwargs)
     except subprocess.SubprocessError:
-        logger.fatal("Failed to run doxygen")
+        logger.critical("Failed to run doxygen")
         return False
 
     # Show ascii bar
     if not utils.is_verbose():
         print("")
-        bar_tit = utils.format_alive_bar_title("Indexing source code, this might take a while")
+        bar_tit = utils.format_alive_bar_title(
+            "Indexing source code, this might take a while"
+        )
         with alive_bar(title=bar_tit):
             while proc.poll() is None:
                 time.sleep(0.1)
 
     if proc.returncode != 0:
-        logger.fatal("Doxygen returned a non zero error code")
+        logger.critical("Doxygen returned a non zero error code")
         logger.info(f"Try run again with -v enabled or read {doxyconf.WARN_LOGFILE}")
         return False
 
@@ -115,7 +114,7 @@ def overwrite_prior_doxygen() -> bool:
     logger.critical(f"Previous doxygen results found: {doxyconf.OUTPUT_DIRECTORY}")
 
     while True:
-        answer = input("         : Do you want to overwrite it (y/N): ")
+        answer =ask_for_overwrite()
         if answer in ["", None] or answer[0].lower() == "n":
             return False
         if answer[0].lower() == "y":
@@ -132,6 +131,12 @@ def overwrite_prior_doxygen() -> bool:
 
             return True
 
+def ask_for_overwrite() -> str:
+    """ Just seperating this so I can mock it out of the tests """
+    return input("         : Do you want to overwrite it (y/N): ")
+
+
+
 def get_schema() -> etree.XMLSchema:
     """ Loads and returns the schema produced by doxygen """
     assert os.path.exists(SCHEMA_LOCATION)
@@ -141,9 +146,22 @@ def get_schema() -> etree.XMLSchema:
 def get_all_xml_files() -> Tuple[str, ...]:
     """ Returns a tuple of all XML files produced by doxygen """
     assert os.path.exists(XML_LOCATION)
-    return tuple([os.path.join(XML_LOCATION, f) for f in os.listdir(XML_LOCATION) if f.endswith(".xml") and f != "index.xml"])
+    return tuple(
+        [
+            os.path.join(XML_LOCATION, f)
+            for f in os.listdir(XML_LOCATION)
+            if f.endswith(".xml") and f != "index.xml"
+        ]
+    )
 
-def filter_xml_files_bad_schema(xml_files_locs: Tuple[str, ...], schema: etree.XMLSchema) -> Tuple[str, ...]:
+
+def filter_xml_files_bad_schema(
+    xml_files_locs: Tuple[str, ...], schema: etree.XMLSchema
+) -> Tuple[str, ...]:
+    """
+    Doxygen sometimes produces malformed XML files that don't match their schema
+    we can drop these xml_files by checking the schema matches
+    """
     valid_files = []
     bin_tit = utils.format_alive_bar_title("Validating file schemas")
     with alive_bar(len(xml_files_locs), title=bin_tit) as bar:
@@ -160,9 +178,17 @@ def filter_xml_files_bad_schema(xml_files_locs: Tuple[str, ...], schema: etree.X
 
 
 def find_fileop_structs(xml_files: Tuple[str, ...]):
+    """
+    Wrapper function to find the file_operations structs
+    for ioctl
+    """
     return find_structs.find_fileop_structs(xml_files)
 
+
 def find_all_device_names(xml_files: Tuple[str, ...]):
+    """
+    Wrapper function to find all device names that is found in the xml files /dev/*
+    """
     find_device_name.xml_list_must_include(xml_files, find_device_name.INCLUDE_FILE)
     return ""
     # return find_device_names.findall(xml_files)

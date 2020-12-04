@@ -27,25 +27,23 @@ Author: Luke Goddard
 Date: 2020
 """
 
-import os
 import json
-
+import os
 from logging import getLogger
-from typing import Tuple, List, Dict
 from multiprocessing import Pool
+from typing import Dict, List, Tuple
 
+from alive_progress import alive_bar  # type: ignore
 from lxml import etree
-from alive_progress import alive_bar
-
-from skid.utils import utils
 from skid.interface_recovery.doxygen import xml_parser
+from skid.utils import utils
 
 logger = getLogger(__name__)
 
 POSSIBLE_IOCTL_NAMES = {".unlocked_ioctl", ".compat_ioctl"}
 
 
-def find_fileop_structs(xml_files: Tuple[str, ...])-> Tuple[Dict[str, str], ...]:
+def find_fileop_structs(xml_files: Tuple[str, ...]) -> Tuple[Dict[str, str], ...]:
     """
     Itterates through all xml files and returns all file_operations
     structs that contain ioctl
@@ -62,24 +60,31 @@ def find_fileop_structs(xml_files: Tuple[str, ...])-> Tuple[Dict[str, str], ...]
         with alive_bar(len(xml_files), title=bar_tit) as bar:
 
             # Run tasks
-            for structs in pool.imap_unordered(find_fileop_structs_in_file, xml_files):
+
+            for structs in pool.imap_unordered(
+                find_fileop_structs_in_file, xml_files
+            ):  # type: List[Dict[str, str]]
                 bar()
                 struct_elements += structs
 
-        logger.debug(f"Found {len(struct_elements)} ioctl file_operations handler function pointers")
+        logger.debug(
+            f"Found {len(struct_elements)} ioctl file_operations handler function pointers"
+        )
 
     # Log results
     if len(struct_elements) == 0:
-        logger.fatal("No ioctl file_operations structs could be found in the source code")
+        logger.critical(
+            "No ioctl file_operations structs could be found in the source code"
+        )
     else:
         logger.debug(json.dumps(struct_elements, indent=4))
 
-    return tuple(struct_elements)
+    return tuple(struct_elements)  # type: ignore
 
 
-def find_fileop_structs_in_file(xml_file: str) -> List[etree.XMLSchema]:
+def find_fileop_structs_in_file(xml_file: str) -> List[Dict[str, str]]:
     """ Loop's through all member definitions in the XML looking for relevant structs """
-    structs = []
+    structs = []  # type: List[Dict[str, str]]
     logger.debug(f"Finding structs in {xml_file}")
 
     # Failed to parse XML
@@ -115,17 +120,17 @@ def find_fileop_structs_in_file(xml_file: str) -> List[etree.XMLSchema]:
     return structs
 
 
-def is_memberdef_a_file_ops_struct(element: etree.Element) -> bool:
+def is_memberdef_a_file_ops_struct(element: etree.Element) -> bool:  # type: ignore
     """ Determines if the member definition is relevant to us """
-    if element.attrib["kind"] != "variable":
+    if element.attrib["kind"] != "variable":  # type: ignore
         return False
 
-    for node in element.iter("type"):
+    for node in element.iter("type"):  # type: ignore
         if node.text is None or "file_operations" not in node.text:
             return False
 
     required_tags = {"initializer", "type"}
-    actual_tags = {child.tag for child in element.iterchildren()}
+    actual_tags = {child.tag for child in element.iterchildren()}  # type: ignore
 
     if len(required_tags - actual_tags) > 0:
         return False
@@ -133,7 +138,7 @@ def is_memberdef_a_file_ops_struct(element: etree.Element) -> bool:
     return True
 
 
-def parse_member_definitions(element: etree.Element, strip_xml=False) -> str:
+def parse_member_definitions(element: etree.Element, strip_xml=False) -> str:  # type: ignore
     """
     Returns the string for the c code,
     this has embbeded XML in it to remove it set strip_xml = True
@@ -144,32 +149,33 @@ def parse_member_definitions(element: etree.Element, strip_xml=False) -> str:
        }</initializer>
     """
     # Should only be one initializer
-    for init in element.iter("initializer"):
-        logger.debug(etree.tostring(element).decode('utf-8'))
+    for init in element.iter("initializer"):  # type: ignore
+        logger.debug(etree.tostring(element).decode("utf-8"))  # type: ignore
         if strip_xml:
             return "".join(init.itertext()).strip()
         return stringify_children(init)
 
 
-def stringify_children(node: etree.Element) -> str:
+def stringify_children(node: etree.Element) -> str:  # type: ignore
     """
     The XML contains hard to parse embbeded XML/string for example this function
     just parses all of it as a single string
     """
-    text = node.text
+    text = node.text  # type: ignore
     if text is None:
         text = ""
-    for child in node:
-        text += etree.tostring(child, encoding="unicode")
+    for child in node:  # type: ignore
+        text += etree.tostring(child, encoding="utf-8")
     return text
 
 
-def get_memberdef_location(element: etree.Element) -> str:
+def get_memberdef_location(element: etree.Element) -> str:  # type: ignore
     """ Finds the source code location and line number for the struct """
-    for location in element.iter("location"):
+    for location in element.iter("location"):  # type: ignore
         floc = location.attrib["file"]
         line = location.attrib["line"]
         return f"{floc}:{line}"
+
 
 def parse_ref_id(line: str) -> str:
     """
@@ -181,9 +187,10 @@ def parse_ref_id(line: str) -> str:
     Note: On error "" is returned
     """
     try:
-        return line.split("refid=\"")[1].split('"')[0]
+        return line.split('refid="')[1].split('"')[0]
     except IndexError:
         return ""
+
 
 def parse_function_name(line: str) -> str:
     """
@@ -195,12 +202,14 @@ def parse_function_name(line: str) -> str:
     Note: On error "" is returned
     """
     try:
-        return line.split("\">")[-1].split("</ref>")[0]
+        return line.split('">')[-1].split("</ref>")[0]
     except IndexError:
         return ""
 
 
-def convert_line_to_dict(line: str, struct_name: str, line_number:str) -> Dict[str, str]:
+def convert_line_to_dict(
+    line: str, struct_name: str, line_number: str
+) -> Dict[str, str]:
     """
     Given a line such as
 
@@ -214,4 +223,9 @@ def convert_line_to_dict(line: str, struct_name: str, line_number:str) -> Dict[s
         function = max(line.split("=")[1].split(",")[0].split())
     else:
         function = parse_function_name(line)
-    return {"function": function, "refid": refid, "struct_name": struct_name, "line_number": line_number}
+    return {
+        "function": function,
+        "refid": refid,
+        "struct_name": struct_name,
+        "line_number": line_number,
+    }

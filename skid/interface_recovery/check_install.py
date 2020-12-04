@@ -42,9 +42,13 @@ def check_doxygen() -> bool:
     Checks that the current environment has doxygen installed. In future we could
     check that the required version is installed
     """
-    proc = subprocess.run(
-        ["doxygen", "--version"], check=False, capture_output=True, text=True
-    )
+    try:
+        proc = subprocess.run(
+            ["doxygen", "--version"], check=False, capture_output=True, text=True
+        )
+    except subprocess.SubprocessError as e:
+        logger.critical(e)
+        return False
 
     if proc.returncode != 0:
         logger.critical(NOT_FOUND_ERR_MSG("doxygen"))
@@ -57,7 +61,11 @@ def check_doxygen() -> bool:
 
 def check_clang() -> bool:
     """ Checks that clang is installed in the current environment """
-    proc = subprocess.run(["clang", "-v"], check=False, capture_output=True, text=True)
+    try:
+        proc = subprocess.run(["clang", "-v"], check=False, capture_output=True, text=True)
+    except subprocess.SubprocessError as e:
+        logger.critical(e)
+        return False
 
     if proc.returncode != 0:
         logger.critical(NOT_FOUND_ERR_MSG("clang"))

@@ -29,7 +29,7 @@ def get_config(source_dir: str, user_config_location: str) -> Dict:
 
     Raises:
         FileNotFoundError: If the user specified config is not found
-        ValueError: If the user specified config is not valid JSON
+        JSONDecodeError: If the config is invalid
 
     Returns:
         The Doxygen configuration as a dictionary
@@ -44,11 +44,17 @@ def get_config(source_dir: str, user_config_location: str) -> Dict:
         raise FileNotFoundError("Fuzzing source code does not exist")
 
     logger.info(f"Source code location exists: {source_dir}")
-    if user_config_location is not None:
+    if (
+        user_config_location is not None
+        and os.path.exists(user_config_location)
+        and os.path.isfile(user_config_location)
+    ):
         user = get_users_override_config(user_config_location)
         logger.info("Setting doxygen user supplied configurations")
-        for key, value in user.values():
+        for key, value in user.items():
             logger.debug(f"{key} -> {value}")
+    elif user_config_location is not None:
+        raise FileNotFoundError(f"Failed to find the config at {user_config_location}")
 
     return {**default, **user}
 
@@ -258,14 +264,19 @@ def get_users_override_config(config_location: str) -> Dict:
     """
 
     assert config_location is not None
+    assert isinstance(config_location, str)
 
     if not os.path.exists(config_location):
         raise FileNotFoundError(
             f"The doxygen configuration file does not exist at the location: {config_location}"
         )
 
-    with open(config_location, "r") as f:
-        config = json.load(f)
+    try:
+        with open(config_location, "r") as f:
+            config = json.load(f)
+    except json.JSONDecodeError as e:
+        logger.critical("Config file is not in valid JSON format")
+        raise e
 
     return config
 
@@ -281,6 +292,8 @@ def write_configuration(config: Dict, write_location: str) -> bool:
 
     Returns: True if successful and False if not
     """
+    assert isinstance(config, dict)
+
     logger.info(f"Writing doxygen configuration file to: {write_location}")
 
     # Check we can write to that location
@@ -291,7 +304,9 @@ def write_configuration(config: Dict, write_location: str) -> bool:
             Path(basename).mkdir(parents=True)
         except OSError as e:
             logger.critical(f"Failed to create the directory: {basename}")
-            logger.critical(f"Failed to write the configuration file to: {write_location}")
+            logger.critical(
+                f"Failed to write the configuration file to: {write_location}"
+            )
             logger.critical(e)
             return False
 
@@ -300,9 +315,11 @@ def write_configuration(config: Dict, write_location: str) -> bool:
         with open(write_location, "w") as file_handler:
             str_conf = convert_conf(config)
             file_handler.writelines(str_conf)
-            _ = [logger.debug(x.strip()) for x in str_conf]
+            _ = [logger.debug(x.strip()) for x in str_conf]  # type: ignore
     except OSError as e:
-        logger.critical(f"Failed to write the doxygen configuration file to: {write_location}")
+        logger.critical(
+            f"Failed to write the doxygen configuration file to: {write_location}"
+        )
         logger.critical(e)
         return False
 

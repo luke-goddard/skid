@@ -7,14 +7,19 @@ Date: 2020
 
 import logging
 
+FORMAT_LJUST = 75
+FORMAT_PREFIX = '--------->'
 
 logger = logging.getLogger(__name__)
 
 def is_verbose() -> bool:
     """ Should be set to True if -v was passed to skid """
-    return logging.getLogger("").handlers[1].level == logging.DEBUG
+    root_logger = logging.getLogger("")
+    assert len(root_logger.handlers) >= 2
+    return root_logger.handlers[1].level == logging.DEBUG
 
 def format_alive_bar_title(title: str) -> str:
-    # return '=========' + title.ljust(75, '-')
-    return '---------> ' + title.ljust(75, '-')
+    """ Formats the ascii bar title """
+    assert isinstance(title, str)
+    return FORMAT_PREFIX + title.ljust(FORMAT_LJUST, '-')
 

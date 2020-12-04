@@ -32,8 +32,8 @@ import logging
 from typing import Tuple
 from multiprocessing import Pool
 
-from lxml import etree
-from alive_progress import alive_bar
+from lxml import etree 
+from alive_progress import alive_bar # type: ignore
 
 from skid.utils import utils
 from skid.interface_recovery.doxygen import xml_parser
@@ -45,7 +45,7 @@ INCLUDE_FILE = "linux/fs.h"
 
 def xml_list_must_include(xml_files: Tuple[str, ...], header: str) -> Tuple[str, ...]:
     """
-    Given a list of xml_file locations this function will return a new tuple 
+    Given a list of xml_file locations this function will return a new tuple
     of xml_file locations that all include the header file `header`
     """
     keep_files = list()
