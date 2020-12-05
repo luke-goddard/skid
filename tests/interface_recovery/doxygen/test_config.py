@@ -7,28 +7,24 @@ import json
 import logging
 import os
 
-from tempfile import NamedTemporaryFile
-
 import pytest
 
 from skid.interface_recovery.doxygen import config
 
 
 @pytest.fixture
-def good_config():
+def good_config(temp_file):
     data = {"TAB_SIZE": 69}
-    with NamedTemporaryFile() as tempf:
-        with open(tempf.name, "w") as f:
-            json.dump(data, f, indent=4)
-        yield tempf.name
+    with open(temp_file, "w") as f:
+        json.dump(data, f, indent=4)
+    yield temp_file
 
 
 @pytest.fixture
-def bad_config():
-    with NamedTemporaryFile() as tempf:
-        with open(tempf.name, "w") as f:
-            f.write("Hello")
-        yield tempf.name
+def bad_config(temp_file):
+    with open(temp_file, "w") as f:
+        f.write("Hello")
+    yield temp_file
 
 
 #################### GLOBALS ####################
@@ -94,17 +90,14 @@ def test_generate_default_config():
 #################### WRITE CONFIG ####################
 
 
-def test_write_config():
+def test_write_config(temp_file):
     dconfig = {"test": 1}
-    wloc = "/tmp/asdfoapsdofasdf"
-    config.write_configuration(dconfig, wloc)
-    assert os.path.exists(wloc)
+    config.write_configuration(dconfig, temp_file)
+    assert os.path.exists(temp_file)
 
-    with open(wloc, "r") as f:
+    with open(temp_file, "r") as f:
         data = f.read()
         assert data == "TEST = 1\n"
-
-    os.remove(wloc)
 
 
 def test_write_config_non_dict():

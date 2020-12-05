@@ -297,13 +297,13 @@ def write_configuration(config: Dict, write_location: str) -> bool:
     logger.info(f"Writing doxygen configuration file to: {write_location}")
 
     # Check we can write to that location
-    basename = os.path.basename(write_location)
-    if not os.path.exists(basename):
-        logger.debug(f"Creating directory {basename}")
+    dirname = os.path.dirname(write_location)
+    if not os.path.exists(dirname):
+        logger.debug(f"Creating directory {dirname}")
         try:
-            Path(basename).mkdir(parents=True)
+            Path(dirname).mkdir(parents=True)
         except OSError as e:
-            logger.critical(f"Failed to create the directory: {basename}")
+            logger.critical(f"Failed to create the directory: {dirname}")
             logger.critical(
                 f"Failed to write the configuration file to: {write_location}"
             )
