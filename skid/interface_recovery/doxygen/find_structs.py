@@ -204,6 +204,7 @@ def parse_ref_id(line: str) -> str:
     This function returns the refid: at91rm9200__wdt_8c_1a0f82b8fa55a637eab5b42397bb13ae6c
     Note: On error "" is returned
     """
+    assert isinstance(line, str)
     try:
         return line.split('refid="')[1].split('"')[0]
     except IndexError:
@@ -219,6 +220,7 @@ def parse_function_name(line: str) -> str:
     This function retuns the function name: at91_wdt_ioctl
     Note: On error "" is returned
     """
+    assert isinstance(line, str)
     try:
         return line.split('">')[-1].split("</ref>")[0]
     except IndexError:
@@ -231,6 +233,7 @@ def parse_fop_type(line: str) -> str:
     this function will return '.unlocked_ioctl' if an error occuers 
     an empty string will be returned
     """
+    assert isinstance(line, str)
     try:
         return line.split(".")[1].split("=")[0].split()[0]
     except IndexError:

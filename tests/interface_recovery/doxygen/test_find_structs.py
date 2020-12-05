@@ -291,20 +291,160 @@ def test_stringify_children(memberdef_element):
 
 ################## TEST GET MEMBERDEF LOCATIONS ##################
 
-# TODO
+
+def test_get_memberdef_location(memberdef_element):
+    floc, linenum = find_structs.get_memberdef_location(memberdef_element)
+    assert floc == "tests/resources/example_driver.c"
+    assert linenum == 234
+
 
 ################## TEST PARSE REFID ##################
 
-# TODO
+
+def test_parse_refid_valid():
+    line = '.unlocked_ioctl = <ref xmlns:xsi="" refid="at91rm9200__wdt_8c_1a0f82b8fa55a637eab5b42397bb13ae6c" kindref="member">at91_wdt_ioctl</ref>,'
+    assert (
+        find_structs.parse_ref_id(line)
+        == "at91rm9200__wdt_8c_1a0f82b8fa55a637eab5b42397bb13ae6c"
+    )
+
+
+def test_parse_refid_valid_no_kind_ref():
+    line = '.unlocked_ioctl = <ref xmlns:xsi="" refid="at91rm9200__wdt_8c_1a0f82b8fa55a637eab5b42397bb13ae6c"> at91_wdt_ioctl</ref>,'
+    assert (
+        find_structs.parse_ref_id(line)
+        == "at91rm9200__wdt_8c_1a0f82b8fa55a637eab5b42397bb13ae6c"
+    )
+
+
+def test_parse_refid_valid_close_function():
+    line = '.refid= <ref xmlns:xsi="" refid="at91rm9200__wdt_8c_1a0f82b8fa55a637eab5b42397bb13ae6c"> at91_wdt_ioctl</ref>,'
+    assert (
+        find_structs.parse_ref_id(line)
+        == "at91rm9200__wdt_8c_1a0f82b8fa55a637eab5b42397bb13ae6c"
+    )
+
+
+def test_parse_refid_valid_close_function_double():
+    line = '.refid= <ref xmlns:xsi="" refid="at91rm9200__wdt_8c_1a0f82b8fa55a637eab5b42397bb13ae6c"> refid</ref>,'
+    assert (
+        find_structs.parse_ref_id(line)
+        == "at91rm9200__wdt_8c_1a0f82b8fa55a637eab5b42397bb13ae6c"
+    )
+
+
+def test_parse_refid_none():
+    with pytest.raises(AssertionError):
+        find_structs.parse_ref_id(None)
+
+
+def test_parse_refid_empty():
+    line = '.refid= <ref xmlns:xsi="" refid</ref>,'
+    assert find_structs.parse_ref_id(line) == ""
+
+
+def test_parse_refid_empty_line():
+    line = ""
+    assert find_structs.parse_ref_id(line) == ""
+
+
+def test_parse_refid_non_str():
+    with pytest.raises(AssertionError):
+        find_structs.parse_ref_id(1)
+
 
 ################## TEST PARSE FUNCTION NAMES ##################
 
-# TODO
+
+def test_parse_function_name_valid():
+    line = '.unlocked_ioctl = <ref xmlns:xsi="" refid="at91rm9200__wdt_8c_1a0f82b8fa55a637eab5b42397bb13ae6c" kindref="member">at91_wdt_ioctl</ref>,'
+    assert find_structs.parse_function_name(line) == "at91_wdt_ioctl"
+
+
+def test_parse_function_name_none():
+    with pytest.raises(AssertionError):
+        find_structs.parse_function_name(None)
+
+
+def test_parse_function_name_empty():
+    line = '.unlocked_ioctl = <ref xmlns:xsi="" refid="at91rm9200__wdt_8c_1a0f82b8fa55a637eab5b42397bb13ae6c" kindref="member"></ref>'
+    assert find_structs.parse_function_name(line) == ""
+
+
+def test_parse_function_name_empty_line():
+    line = ""
+    assert find_structs.parse_function_name(line) == ""
+
+
+def test_parse_function_name_non_str():
+    with pytest.raises(AssertionError):
+        find_structs.parse_function_name(1)
+
+
+################## TEST PARSE FUNCTION OPERATION ##################
+
+
+def test_parse_function_operation_valid():
+    line = '.unlocked_ioctl = <ref xmlns:xsi="" refid="at91rm9200__wdt_8c_1a0f82b8fa55a637eab5b42397bb13ae6c" kindref="member">at91_wdt_ioctl</ref>,'
+    assert find_structs.parse_fop_type(line) == "unlocked_ioctl"
+
+
+def test_parse_function_operation_spaces():
+    line = '     .unlocked_ioctl     = <ref xmlns:xsi="" refid="at91rm9200__wdt_8c_1a0f82b8fa55a637eab5b42397bb13ae6c" kindref="member">at91_wdt_ioctl</ref>,'
+    assert find_structs.parse_fop_type(line) == "unlocked_ioctl"
+
+
+def test_parse_function_operation_too_close():
+    line = '.unlocked_ioctl= <ref xmlns:xsi="" refid="at91rm9200__wdt_8c_1a0f82b8fa55a637eab5b42397bb13ae6c" kindref="member">at91_wdt_ioctl</ref>,'
+    assert find_structs.parse_fop_type(line) == "unlocked_ioctl"
+
+
+def test_parse_function_operation_none():
+    with pytest.raises(AssertionError):
+        find_structs.parse_fop_type(None)
+
+
+def test_parse_function_operation_empty():
+    line = '= <ref xmlns:xsi="" refid="at91rm9200__wdt_8c_1a0f82b8fa55a637eab5b42397bb13ae6c" kindref="member"></ref>'
+    assert find_structs.parse_fop_type(line) == ""
+
+
+def test_parse_function_operation_empty_line():
+    line = ""
+    assert find_structs.parse_fop_type(line) == ""
+
+
+def test_parse_function_operation_non_str():
+    with pytest.raises(AssertionError):
+        find_structs.parse_fop_type(1)
+
 
 ################## TEST CONVERT LINE TO DICT ##################
 
-# TODO
 
-################## TEST LOG RESULTS ##################
+def test_convert_line_to_dictionary():
+    line = '.unlocked_ioctl = <ref xmlns:xsi="" refid="at91rm9200__wdt_8c_1a0f82b8fa55a637eab5b42397bb13ae6c" kindref="member">at91_wdt_ioctl</ref>,'
+    expected = {
+        "function": "at91_wdt_ioctl",
+        "refid": "at91rm9200__wdt_8c_1a0f82b8fa55a637eab5b42397bb13ae6c",
+        "struct_name": "wdt_fops",
+        "struct_line_number": 1,
+        "file_path": "test",
+        "fop_type": "unlocked_ioctl",
+    }
+    res = find_structs.convert_line_to_dict(line, "wdt_fops", "test", 1)
+    assert res == expected
 
-# TODO
+def test_convert_line_to_dictionary_no_refid():
+    line = '.unlocked_ioctl = at91_wdt_ioctl</ref>,'
+    expected = {
+        "function": "at91_wdt_ioctl",
+        "refid": "",
+        "struct_name": "wdt_fops",
+        "struct_line_number": 1,
+        "file_path": "test",
+        "fop_type": "unlocked_ioctl",
+    }
+    res = find_structs.convert_line_to_dict(line, "wdt_fops", "test", 1)
+    assert res == expected
+
