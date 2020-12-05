@@ -7,6 +7,8 @@ import pytest
 from skid.interface_recovery.doxygen import find_structs
 
 
+################## TEST FIND FILEOP STRUCTS ##################
+
 def test_find_fileop_stucts(xml_files):
     expected = (
         {
@@ -30,4 +32,45 @@ def test_find_fileop_stucts(xml_files):
 def test_find_fileop_stucts_empty():
     with pytest.raises(AssertionError):
         assert find_structs.find_fileop_structs([]) == []
+
+
+################## TEST FIND FILEOP STRUCTS IN FILE ##################
+
+#TODO
+
+################## TEST IS MEMBERDEF IN FILEOPS STRUCT ##################
+
+#TODO
+
+################## TEST PARSE IOCTL FILEOPS ##################
+
+#TODO
+
+################## TEST PARSE MEMBERDEF ##################
+
+#TODO
+
+################## TEST STRINGIFY CHILDREN ##################
+
+#TODO
+
+################## TEST GET MEMBERDEF LOCATIONS ##################
+
+#TODO
+
+################## TEST PARSE REFID ##################
+
+#TODO
+
+################## TEST PARSE FUNCTION NAMES ##################
+
+#TODO
+
+################## TEST CONVERT LINE TO DICT ##################
+
+#TODO
+
+################## TEST LOG RESULTS ##################
+
+#TODO
 

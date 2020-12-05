@@ -140,11 +140,11 @@ def parse_ioctl_file_operations(struct_xml: etree.Element):  # type: ignore
             continue
 
         # log findings
-        line_number, file_path = get_memberdef_location(struct_xml)
-        logger.debug(f"Found fops struct: {line_number}")
+        file_path, line_number = get_memberdef_location(struct_xml)
+        logger.debug(f"Found fops struct: {file_path:line_number}")
 
         struct_name = struct_xml.find("name").text  # type: ignore
-        ioctl_ops.append(convert_line_to_dict(line, struct_name, line_number, file_path))
+        ioctl_ops.append(convert_line_to_dict(line, struct_name, file_path, line_number))
 
     return ioctl_ops
 
