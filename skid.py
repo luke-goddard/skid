@@ -20,6 +20,7 @@ Misc Options:
 """
 
 import logging
+import random
 import os
 
 from typing import Dict
@@ -109,19 +110,54 @@ def print_ascii():
     print("██▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓████")
     print("  ████████████████████████████████████████████████")
 
+def print_ascii2():
+    """ print ASCII logo 2"""
+    print("              ▒▒              ▒▒")
+    print("            ▒▒░░▒▒▒▒      ▒▒▒▒░░▒▒")
+    print("          ▓▓░░  ░░░░▒▒▓▓▒▒░░░░  ░░▒▒")
+    print("          ▓▓░░  ░░░░░░░░░░░░░░  ░░▒▒")
+    print("          ▒▒░░    ░░░░░░░░░░    ░░▒▒")
+    print("          ▒▒░░  ░░░░░░░░░░░░░░  ░░▒▒")
+    print("            ▒▒░░░░  ░░░░░░  ░░░░▒▒")
+    print("          ▒▒░░░░      ░░    ░░░░▒▒▒▒░░    ▒▒")
+    print("          ▒▒░░    ██      ▓▓    ▒▒▓▓      ▒▒      ░░")
+    print("        ▒▒░░░░                  ░░░░▒▒    ▒▒  ▒▒")
+    print("          ▒▒░░      ██████      ░░▒▒    ▒▒░░  ▒▒")
+    print("            ▒▒░░      ██      ▒▒▓▓    ▒▒░░░░  ░░")
+    print("          ▒▒░░▒▒░░          ░░▒▒░░▒▒▒▒░░░░░░▒▒")
+    print("          ▒▒  ░░              ▓▓░░░░▒▒▒▒▒▒▒▒░░")
+    print("        ▒▒░░                ░░░░░░░░░░░░▒▒")
+    print("        ▒▒▒▒▒▒            ░░░░▒▒▒▒▒▒░░░░▒▒")
+    print("        ▒▒░░░░▓▓      ▒▒  ░░░░▒▒░░░░░░░░▒▒")
+    print("        ▒▒░░░░▒▒      ▒▒  ░░░░▒▒  ░░░░░░▒▒")
+    print("        ▒▒░░    ▓▓  ▒▒      ░░▒▒      ▒▒")
+    print("          ▒▒      ▒▒          ▒▒  ▒▒  ▒▒")
+    print("        ▒▒  ▒▒  ▒▒  ▒▒  ▒▒  ▒▒▒▒▒▒▒▒▒▒")
+    print("        ▒▒▓▓▒▒▒▒    ▓▓▒▒▒▒▒▒")
+    print("██▒▒▓▓xxxxxxxxxxxxxxxxxxxxxxxxxxxx▒▒▓▓██████")
+    print("██▒▒▓▓ ███████╗██╗  ██╗██╗██████╗ ▒▒▓▓██████")
+    print("██▒▒▓▓ ██╔════╝██║ ██╔╝██║██╔══██╗▒▒▓▓██████")
+    print("██▒▒▓▓ ███████╗█████╔╝ ██║██║  ██║▒▒▓▓██████")
+    print("██▒▒▓▓ ╚════██║██╔═██╗ ██║██║  ██║▒▒▓▓██████")
+    print("██▒▒▓▓ ███████║██║  ██╗██║██████╔╝▒▒▓▓██████")
+    print("██▒▒▓▓ ╚══════╝╚═╝  ╚═╝╚═╝╚═════╝ ▒▒▓▓██████")
+    print("██▒▒▓▓xxxxxxxxxxxxxxxxxxxxxxxxxxxx▒▒▓▓██████")
+
 
 def main(arguments: Dict):
-    print_ascii()
+    asciiarts = [print_ascii, print_ascii2]
+    asciiarts[random.randint(0, len(asciiarts)-1)]()
+    # print_ascii()
     log = setup_logger(colour=not arguments["--no-color"], verbose=arguments["--verbose"])
 
     try:
         if arguments["ir"]:
             start_interface_recovery(arguments)
         else:
-            log.fatal("No command mode found!!")
-    except Exception as e:
+            log.critical("No command mode found!!")
+    except Exception as e: 
         log.exception(e)
-        log.fatal("An unexpected programing error occured")
+        log.critical("An unexpected programing error occured")
         log.warning("You can check the log file at /tmp/skid.log")
         log.warning("Please file a bug report to -> https://github.com/luke-goddard/skid/issues/new")
 
