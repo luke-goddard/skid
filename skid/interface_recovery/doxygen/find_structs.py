@@ -31,7 +31,7 @@ import json
 import os
 from logging import getLogger
 from multiprocessing import Pool
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Any
 
 from alive_progress import alive_bar  # type: ignore
 from lxml import etree
@@ -140,11 +140,11 @@ def parse_ioctl_file_operations(struct_xml: etree.Element):  # type: ignore
             continue
 
         # log findings
-        line_number = get_memberdef_location(struct_xml)
+        line_number, file_path = get_memberdef_location(struct_xml)
         logger.debug(f"Found fops struct: {line_number}")
 
         struct_name = struct_xml.find("name").text  # type: ignore
-        ioctl_ops.append(convert_line_to_dict(line, struct_name, line_number))
+        ioctl_ops.append(convert_line_to_dict(line, struct_name, line_number, file_path))
 
     return ioctl_ops
 
@@ -184,12 +184,12 @@ def stringify_children(node: etree.Element) -> str:  # type: ignore
     return text
 
 
-def get_memberdef_location(element: etree.Element) -> str:  # type: ignore
+def get_memberdef_location(element: etree.Element) -> Tuple[str, int]:  # type: ignore
     """ Finds the source code location and line number for the struct """
+    # Should only be one
     for location in element.iter("location"):  # type: ignore
-        floc = location.attrib["file"]
-        line = location.attrib["line"]
-        return f"{floc}:{line}"
+        attrib = location.attrib
+        return attrib["file"], int(attrib["line"])
 
 
 def parse_ref_id(line: str) -> str:
@@ -226,8 +226,8 @@ def parse_function_name(line: str) -> str:
 
 
 def convert_line_to_dict(
-    line: str, struct_name: str, line_number: str
-) -> Dict[str, str]:
+    line: str, struct_name: str, file_path: str, line_number: int
+) -> Dict[str, Any]:
     """
     Given a line such as
 
@@ -245,7 +245,8 @@ def convert_line_to_dict(
         "function": function,
         "refid": refid,
         "struct_name": struct_name,
-        "line_number": line_number,
+        "struct_line_number": line_number,
+        "file_path": os.path.relpath(file_path),
     }
 
 
