@@ -7,25 +7,19 @@
 import logging
 import os
 import shutil
-from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 import pytest
 from lxml import etree
 from skid.interface_recovery.doxygen import config, doxygen
-
-TEST_RESOURCES = "tests/resources/"
-VALID_SCHEMA_LOCATION = os.path.join(TEST_RESOURCES, "example_schema.xsd")
-TEST_XML_FILES = ("tests/resources/example_c_file.xml",)
-
+from tests.conftest import TEST_RESOURCES, VALID_SCHEMA_LOCATION, TEST_XML_FILES
 
 @pytest.fixture
-def change_output_dir():
+def change_output_dir(temp_dir):
     try:
         before = config.OUTPUT_DIRECTORY
-        with TemporaryDirectory() as tempd:
-            config.OUTPUT_DIRECTORY = tempd
-            yield config.OUTPUT_DIRECTORY
+        config.OUTPUT_DIRECTORY = temp_dir
+        yield temp_dir
     finally:
         config.OUTPUT_DIRECTORY = before
 
@@ -217,7 +211,6 @@ def test_filter_bad_schema_non_existant_file(schema):
 
 
 def test_find_fileop_structs():
-    print(doxygen.find_fileop_structs(TEST_XML_FILES))
     assert len(doxygen.find_fileop_structs(TEST_XML_FILES)) == 2
 
 

@@ -31,7 +31,7 @@ import json
 import os
 from logging import getLogger
 from multiprocessing import Pool
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Any
 
 from alive_progress import alive_bar  # type: ignore
 from lxml import etree
@@ -100,6 +100,7 @@ def find_fileop_structs_in_file(xml_file: str) -> List[Dict[str, str]]:
 
 def is_memberdef_a_file_ops_struct(element: etree.Element) -> bool:  # type: ignore
     """ Determines if the member definition is relevant to us """
+    assert element is not None
     if element.attrib["kind"] != "variable":  # type: ignore
         return False
 
@@ -140,11 +141,11 @@ def parse_ioctl_file_operations(struct_xml: etree.Element):  # type: ignore
             continue
 
         # log findings
-        line_number = get_memberdef_location(struct_xml)
-        logger.debug(f"Found fops struct: {line_number}")
+        file_path, line_number = get_memberdef_location(struct_xml)
+        logger.debug(f"Found fops struct: {file_path}:{line_number}")
 
         struct_name = struct_xml.find("name").text  # type: ignore
-        ioctl_ops.append(convert_line_to_dict(line, struct_name, line_number))
+        ioctl_ops.append(convert_line_to_dict(line, struct_name, file_path, line_number))
 
     return ioctl_ops
 
@@ -162,11 +163,13 @@ def parse_member_definitions(element: etree.Element, strip_xml=False) -> str:  #
            .unlocked_ioctl = <ref refid="dfl-fme-main_8c_1a1657ada1fdafea4ec33299b88dcdb622" kindref="member">fme_ioctl</ref>,
        }</initializer>
     """
+    assert element is not None
     text = ""
     for init in element.iter("initializer"):  # type: ignore
         if strip_xml:
             text += "".join(init.itertext()).strip()
-        text += stringify_children(init)
+        else:
+            text += stringify_children(init)
 
     return text
 
@@ -184,12 +187,12 @@ def stringify_children(node: etree.Element) -> str:  # type: ignore
     return text
 
 
-def get_memberdef_location(element: etree.Element) -> str:  # type: ignore
+def get_memberdef_location(element: etree.Element) -> Tuple[str, int]:  # type: ignore
     """ Finds the source code location and line number for the struct """
+    # Should only be one
     for location in element.iter("location"):  # type: ignore
-        floc = location.attrib["file"]
-        line = location.attrib["line"]
-        return f"{floc}:{line}"
+        attrib = location.attrib
+        return attrib["file"], int(attrib["line"])
 
 
 def parse_ref_id(line: str) -> str:
@@ -201,6 +204,7 @@ def parse_ref_id(line: str) -> str:
     This function returns the refid: at91rm9200__wdt_8c_1a0f82b8fa55a637eab5b42397bb13ae6c
     Note: On error "" is returned
     """
+    assert isinstance(line, str)
     try:
         return line.split('refid="')[1].split('"')[0]
     except IndexError:
@@ -216,18 +220,33 @@ def parse_function_name(line: str) -> str:
     This function retuns the function name: at91_wdt_ioctl
     Note: On error "" is returned
     """
+    assert isinstance(line, str)
     try:
         return line.split('">')[-1].split("</ref>")[0]
     except IndexError:
         return ""
 
+def parse_fop_type(line: str) -> str:
+    """
+    Given a line in the struct such as:
+    '.unlocked_ioctl = at91_wdt_ioctl'
+    this function will return '.unlocked_ioctl' if an error occuers 
+    an empty string will be returned
+    """
+    assert isinstance(line, str)
+    try:
+        return line.split(".")[1].split("=")[0].split()[0]
+    except IndexError:
+        logger.warning("Failed to find file_operations type for:")
+        logger.warning(line)
+        return ""
 
 ########## FORMAT AGRIGATED FILE OP INFO ##########
 
 
 def convert_line_to_dict(
-    line: str, struct_name: str, line_number: str
-) -> Dict[str, str]:
+    line: str, struct_name: str, file_path: str, line_number: int
+) -> Dict[str, Any]:
     """
     Given a line such as
 
@@ -245,7 +264,9 @@ def convert_line_to_dict(
         "function": function,
         "refid": refid,
         "struct_name": struct_name,
-        "line_number": line_number,
+        "struct_line_number": line_number,
+        "file_path": os.path.relpath(file_path),
+        "fop_type": parse_fop_type(line)
     }
 
 

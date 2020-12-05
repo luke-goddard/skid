@@ -7,5 +7,6 @@ skid.xmind
 */Session.vim
 Session.vim
 stuff/*
+.coverage.*
 skidfuzz.egg-info/*
 *.pyc
