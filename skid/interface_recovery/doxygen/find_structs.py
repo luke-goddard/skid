@@ -100,6 +100,7 @@ def find_fileop_structs_in_file(xml_file: str) -> List[Dict[str, str]]:
 
 def is_memberdef_a_file_ops_struct(element: etree.Element) -> bool:  # type: ignore
     """ Determines if the member definition is relevant to us """
+    assert element is not None
     if element.attrib["kind"] != "variable":  # type: ignore
         return False
 
@@ -141,7 +142,7 @@ def parse_ioctl_file_operations(struct_xml: etree.Element):  # type: ignore
 
         # log findings
         file_path, line_number = get_memberdef_location(struct_xml)
-        logger.debug(f"Found fops struct: {file_path:line_number}")
+        logger.debug(f"Found fops struct: {file_path}:{line_number}")
 
         struct_name = struct_xml.find("name").text  # type: ignore
         ioctl_ops.append(convert_line_to_dict(line, struct_name, file_path, line_number))
@@ -162,11 +163,13 @@ def parse_member_definitions(element: etree.Element, strip_xml=False) -> str:  #
            .unlocked_ioctl = <ref refid="dfl-fme-main_8c_1a1657ada1fdafea4ec33299b88dcdb622" kindref="member">fme_ioctl</ref>,
        }</initializer>
     """
+    assert element is not None
     text = ""
     for init in element.iter("initializer"):  # type: ignore
         if strip_xml:
             text += "".join(init.itertext()).strip()
-        text += stringify_children(init)
+        else:
+            text += stringify_children(init)
 
     return text
 
@@ -221,6 +224,19 @@ def parse_function_name(line: str) -> str:
     except IndexError:
         return ""
 
+def parse_fop_type(line: str) -> str:
+    """
+    Given a line in the struct such as:
+    '.unlocked_ioctl = at91_wdt_ioctl'
+    this function will return '.unlocked_ioctl' if an error occuers 
+    an empty string will be returned
+    """
+    try:
+        return line.split(".")[1].split("=")[0].split()[0]
+    except IndexError:
+        logger.warning("Failed to find file_operations type for:")
+        logger.warning(line)
+        return ""
 
 ########## FORMAT AGRIGATED FILE OP INFO ##########
 
@@ -247,6 +263,7 @@ def convert_line_to_dict(
         "struct_name": struct_name,
         "struct_line_number": line_number,
         "file_path": os.path.relpath(file_path),
+        "fop_type": parse_fop_type(line)
     }
 
 
