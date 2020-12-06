@@ -155,7 +155,7 @@ def main(arguments: Dict):
             start_interface_recovery(arguments)
         else:
             log.critical("No command mode found!!")
-    except Exception as e: 
+    except Exception as e:
         log.exception(e)
         log.critical("An unexpected programing error occured")
         log.warning("You can check the log file at /tmp/skid.log")

@@ -26,7 +26,7 @@ def change_output_dir(temp_dir):
 
 @pytest.fixture
 def schema():
-    return doxygen.get_schema()
+    return doxygen.get_schema(schema=VALID_SCHEMA_LOCATION)
 
 
 ################## TEST GLOBALS ##################
@@ -189,7 +189,7 @@ def test_get_all_xml_files_valid_location():
 
 
 def test_filter_bad_schema_no_files(schema):
-    doxygen.filter_xml_files_bad_schema([], schema)
+    assert len(doxygen.filter_xml_files_bad_schema([], schema)) == 0
 
 
 def test_filter_bad_schema_no_schema_is_none():
