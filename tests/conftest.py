@@ -9,6 +9,8 @@ from tempfile import TemporaryDirectory, NamedTemporaryFile
 import os
 import pytest
 
+from skid.interface_recovery import doxygen
+
 
 TEST_RESOURCES = "tests/resources/"
 VALID_SCHEMA_LOCATION = os.path.join(TEST_RESOURCES, "example_schema.xsd")
@@ -31,3 +33,8 @@ def temp_file():
 @pytest.fixture
 def xml_files():
     return TEST_XML_FILES
+
+@pytest.fixture
+def xml_schema():
+    return doxygen.xml_utils.get_schema(VALID_SCHEMA_LOCATION)
+
