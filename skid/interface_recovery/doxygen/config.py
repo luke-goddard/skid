@@ -18,7 +18,7 @@ OUTPUT_DIRECTORY = "/tmp/skid-doxygen"
 WARN_LOGFILE = "/tmp/doxygen.log"
 
 
-def get_config(source_dir: str, user_config_location: str) -> Dict:
+def get(source_dir: str, user_config_location: str) -> Dict:
     """
     Get's the default inbuilt doxygen configuration and then if avaliable will load
     a user specified configuration (as json) as then override the default configuration
@@ -38,7 +38,7 @@ def get_config(source_dir: str, user_config_location: str) -> Dict:
     assert isinstance(user_config_location, str) or user_config_location is None
 
     user = dict()
-    default = generate_default_config(source_dir)
+    default = get_default_config(source_dir)
 
     if not os.path.exists(source_dir):
         raise FileNotFoundError("Fuzzing source code does not exist")
@@ -59,7 +59,7 @@ def get_config(source_dir: str, user_config_location: str) -> Dict:
     return {**default, **user}
 
 
-def generate_default_config(source_dir: str) -> Dict:
+def get_default_config(source_dir: str) -> Dict:
     """
     Generates the default configuration for doxygen
     Args: source_dir: Location of the source code to be indexed
@@ -281,7 +281,7 @@ def get_users_override_config(config_location: str) -> Dict:
     return config
 
 
-def write_configuration(config: Dict, write_location: str) -> bool:
+def write(config: Dict, write_location: str) -> bool:
     """
     This function takes the dictionary of key, values used to configure Doxygen and then writes
     the configuration file to disk

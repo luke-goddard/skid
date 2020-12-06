@@ -436,7 +436,7 @@ def test_convert_line_to_dictionary():
     assert res == expected
 
 def test_convert_line_to_dictionary_no_refid():
-    line = '.unlocked_ioctl = at91_wdt_ioctl</ref>,'
+    line = '.unlocked_ioctl = at91_wdt_ioctl </ref>,'
     expected = {
         "function": "at91_wdt_ioctl",
         "refid": "",

@@ -47,26 +47,26 @@ def test_logger():
 
 def test_get_config_bad_source():
     with pytest.raises(AssertionError):
-        config.get_config(1, "s")
+        config.get(1, "s")
 
 
 def test_get_config_bad_user_config():
     with pytest.raises(AssertionError):
-        config.get_config("s", 1)
+        config.get("s", 1)
 
 
 def test_get_config_fake_source_path():
     with pytest.raises(FileNotFoundError):
-        config.get_config("/s/as/df/as/df", "/")
+        config.get("/s/as/df/as/df", "/")
 
 
 def test_get_config_fake_config_path():
     with pytest.raises(FileNotFoundError):
-        config.get_config("/", "/s/as/df/as/df")
+        config.get("/", "/s/as/df/as/df")
 
 
 def test_get_config_real(good_config):
-    dconfig = config.get_config(".", good_config)
+    dconfig = config.get(".", good_config)
     assert isinstance(dconfig, dict)
     assert "INPUT" in dconfig
     assert dconfig["INPUT"] == "."
@@ -75,14 +75,14 @@ def test_get_config_real(good_config):
 
 def test_get_config_bad(bad_config):
     with pytest.raises(json.JSONDecodeError):
-        config.get_config(".", bad_config)
+        config.get(".", bad_config)
 
 
 #################### GET CONFIG ####################
 
 
 def test_generate_default_config():
-    conf = config.generate_default_config("")
+    conf = config.get_default_config("")
     assert isinstance(conf, dict)
     assert len(conf) > 10
 
@@ -92,7 +92,7 @@ def test_generate_default_config():
 
 def test_write_config(temp_file):
     dconfig = {"test": 1}
-    config.write_configuration(dconfig, temp_file)
+    config.write(dconfig, temp_file)
     assert os.path.exists(temp_file)
 
     with open(temp_file, "r") as f:
@@ -102,7 +102,7 @@ def test_write_config(temp_file):
 
 def test_write_config_non_dict():
     with pytest.raises(AssertionError):
-        config.write_configuration("a", "/aa")
+        config.write("a", "/aa")
 
 
 #################### CONVERT CONFIE ####################

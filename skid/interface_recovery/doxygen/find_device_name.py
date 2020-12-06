@@ -36,8 +36,7 @@ from lxml import etree
 from alive_progress import alive_bar # type: ignore
 
 from skid.utils import utils
-from skid.interface_recovery.doxygen import xml_parser
-from skid.interface_recovery.doxygen.find_structs import stringify_children
+from skid.interface_recovery import doxygen
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +62,7 @@ def xml_file_includes(args: Tuple[str, str]) -> Tuple[bool, str]:
     assert len(args) == 2
     xml_file, header = args
     try:
-        root = xml_parser.get_root(xml_file)
+        root = doxygen.xml_utils.get_root(xml_file)
     except etree.LxmlError as e:
         logger.error(e)
         return (False, xml_file)
@@ -77,7 +76,7 @@ def xml_file_includes(args: Tuple[str, str]) -> Tuple[bool, str]:
             if highlight.attrib["class"] != "preprocessor":
                 continue
 
-            if header in stringify_children(highlight):
+            if header in doxygen.find_structs.stringify_children(highlight):
                 logger.debug(f"The following file include {header}: {xml_file}")
 
             return (True, xml_file)
@@ -85,7 +84,8 @@ def xml_file_includes(args: Tuple[str, str]) -> Tuple[bool, str]:
     return (False, xml_file)
 
 
-
+def find_all(xml_files: Tuple[str, ...]):
+    pass
 
 def find_all_register_chardev(xml_files: Tuple[str, ...]):
     logger.debug("Finding all register_chrdev(unsigned int major, const char *name, struct file_operations *fops)")

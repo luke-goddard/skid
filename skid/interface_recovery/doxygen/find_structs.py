@@ -35,7 +35,8 @@ from typing import Dict, List, Tuple, Any
 
 from alive_progress import alive_bar  # type: ignore
 from lxml import etree
-from skid.interface_recovery.doxygen import xml_parser
+
+from skid.interface_recovery import doxygen
 from skid.utils import utils
 
 logger = getLogger(__name__)
@@ -82,7 +83,7 @@ def find_fileop_structs_in_file(xml_file: str) -> List[Dict[str, str]]:
     """ Loop's through all member definitions in the XML looking for relevant structs """
     try:
         logger.debug(f"Finding structs in {xml_file}")
-        root = xml_parser.get_root(xml_file)
+        root = doxygen.xml_utils.get_root(xml_file)
     except etree.LxmlError as e:
         logger.error(e)
         return list()
