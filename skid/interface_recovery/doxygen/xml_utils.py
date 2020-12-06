@@ -6,15 +6,13 @@ Date: 2020
 """
 
 import os
-
 from io import BytesIO
 from logging import getLogger
 from multiprocessing import Pool
 from typing import Tuple
 
+from alive_progress import alive_bar  # type: ignore
 from lxml import etree  # type: ignore
-from alive_progress import alive_bar # type: ignore
-
 from skid.interface_recovery import doxygen
 from skid.utils import utils
 
@@ -33,6 +31,8 @@ def get_root(xml_loc: str):
     Get's the root node of the XML
     Raises: DoxygenMalformedXML: If the XML could not be parsed
     """
+    assert xml_loc is not None
+    assert os.path.exists(xml_loc)
     with open(xml_loc, "rb") as xml_f:
         return etree.parse(BytesIO(xml_f.read()))
 
@@ -46,6 +46,8 @@ def validate_schema(xml_loc: str, schema: etree.XMLSchema):
     if the xml file matches the schema
     Raises: DoxygenMalformedXML: If the schema is malformed
     """
+    assert xml_loc is not None
+    assert schema is not None
     assert os.path.exists(xml_loc)
 
     with open(xml_loc, "rb") as xml_f:
@@ -72,6 +74,7 @@ def validate_schema(xml_loc: str, schema: etree.XMLSchema):
 
 def get_schema(xml_loc: str):
     """ Loads the schema produced by doxygen from disk """
+    assert xml_loc is not None
     assert os.path.exists(xml_loc)
     try:
         schema_root = etree.parse(xml_loc)
@@ -85,16 +88,17 @@ def get_schema(xml_loc: str):
 ##################### XML FILTER BY ATTRIBUTE #####################
 
 
-def filter_xml_list_by_header(xml_files: Tuple[str, ...], header: str) -> Tuple[str, ...]:
+def filter_xml_list_by_header(
+    xml_files: Tuple[str, ...], header: str
+) -> Tuple[str, ...]:
     """
     Given a list of xml_file locations this function will return a new tuple
     of xml_file locations that all include the header file `header`
     """
     keep_files = list()
+    msg = f"Finding source files that include '{header}'"
+    title = utils.format_alive_bar_title(msg)
 
-    title = utils.format_alive_bar_title(
-        f"Finding source files that include '{header}'"
-    )
     with alive_bar(len(xml_files), title=title) as bar:
         with Pool(processes=os.cpu_count()) as pool:
             for res, xml_file in pool.imap_unordered(
@@ -105,7 +109,19 @@ def filter_xml_list_by_header(xml_files: Tuple[str, ...], header: str) -> Tuple[
                     keep_files.append(xml_file)
     return tuple(keep_files)
 
+
 def xml_file_has_header(args: Tuple[str, str]) -> Tuple[bool, str]:
+    """
+    Searches an xml file to see if it has a header
+
+    Param:
+        args[0]: xml file location
+        args[1]: header to search for e.g fs.h
+
+    Returns: Tuple where the first element is True or false 
+             dependening on the xml file having the header and the 
+             second element being the xml file location (arg[0])
+    """
     assert len(args) == 2
     xml_file, header = args
     try:
@@ -115,17 +131,16 @@ def xml_file_has_header(args: Tuple[str, str]) -> Tuple[bool, str]:
         return (False, xml_file)
 
     for element in root.iter("codeline"):
-        for highlight in element.iter('highlight'):
+        for highlight in element.iter("highlight"):
             txt = highlight.text
             if not (txt is not None and "include" in txt and "#" in txt):
                 continue
-            
+
             if highlight.attrib["class"] != "preprocessor":
                 continue
 
             if header in doxygen.find_structs.stringify_children(highlight):
                 logger.debug(f"The following file include {header}: {xml_file}")
-
-            return (True, xml_file)
+                return (True, xml_file)
 
     return (False, xml_file)
