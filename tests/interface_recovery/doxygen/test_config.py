@@ -7,6 +7,8 @@ import json
 import logging
 import os
 
+from unittest import mock
+
 import pytest
 
 from skid.interface_recovery.doxygen import config
@@ -78,7 +80,7 @@ def test_get_config_bad(bad_config):
         config.get(".", bad_config)
 
 
-#################### GET CONFIG ####################
+#################### GEN DEFAULT CONFIG ####################
 
 
 def test_generate_default_config():
@@ -86,6 +88,16 @@ def test_generate_default_config():
     assert isinstance(conf, dict)
     assert len(conf) > 10
 
+
+#################### GEN DEFAULT CONFIG ####################
+
+def test_get_user_overide_config_real(good_config):
+    data = {"TAB_SIZE": 69}
+    assert config.get_users_override_config(good_config) == data
+
+def test_get_user_overide_config_fake():
+    with pytest.raises(FileNotFoundError):
+        config.get_users_override_config("a/sdf/asdf/a/sdf/asdf")
 
 #################### WRITE CONFIG ####################
 
@@ -104,6 +116,37 @@ def test_write_config_non_dict():
     with pytest.raises(AssertionError):
         config.write("a", "/aa")
 
+
+def test_write_dir_does_not_exists():
+    fake_dir = "/tmp/asd/fa/df/adsf/asfd"
+    fake_write = os.path.join(fake_dir, "config.json")
+    assert not os.path.exists(fake_dir)
+    dconfig = {"TAB_SIZE": 69}
+    try:
+        assert config.write(dconfig, fake_write)
+        assert os.path.exists(fake_write)
+        with open(fake_write, "r") as f:
+            data = f.read()
+            assert data == "TAB_SIZE = 69\n"
+    finally:
+        if os.path.exists(fake_dir):
+            os.system(f"rm -rf {fake_dir}")
+
+def test_write_dir_does_not_exists_oserror():
+    fake_dir = "/tmp/asd/fa/df/adsf/asfd"
+    fake_write = os.path.join(fake_dir, "config.json")
+    assert not os.path.exists(fake_dir)
+    dconfig = {"TAB_SIZE": 69}
+    try:
+        with mock.patch("skid.interface_recovery.doxygen.config.Path", side_effect=OSError):
+            assert not config.write(dconfig, fake_write)
+    finally:
+        if os.path.exists(fake_dir):
+            os.system(f"rm -rf {fake_dir}")
+
+def test_write_oserror(temp_file):
+    with mock.patch("builtins.open", side_effect=OSError):
+        assert not config.write(dict(), temp_file)
 
 #################### CONVERT CONFIE ####################
 
