@@ -1,6 +1,6 @@
 # SKID Fuzz (Structured Kernel Ioctl Driver Fuzzer)
 
-__Under development once I have more time__
+This is used as a proof on concept, __Under development once I have more time__
 
 Skid expands on the work behind [Difuze](https://acmccs.github.io/papers/p2123-corinaA.pdf). Difuze is an interface aware fuzzer for the [ioctl](https://man7.org/linux/man-pages/man2/ioctl.2.html) syscalls. Vendors adding new custom code to the kernel will always pose a risk, but pair that risk with a direct interface to the kernel's new code from userland and you're left with a profitable target for bug hunting. On android 63% of kernel related bugs are using ioctl on vendor's custom drivers, see [here](https://events.static.linuxfound.org/sites/events/files/slides/Android-%20protecting%20the%20kernel.pdf).
 
